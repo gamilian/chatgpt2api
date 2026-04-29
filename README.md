@@ -24,11 +24,78 @@
 
 已发布镜像支持 `linux/amd64` 与 `linux/arm64`，在 x86 服务器和 Apple Silicon / ARM Linux 设备上都会自动拉取匹配架构的版本。
 
+### Docker 部署（推荐一键）
+
 ```bash
 git clone git@github.com:basketikun/chatgpt2api.git
 # 按需编辑 config.json 的密钥和 `refresh_account_interval_minute`
 # 也可以直接通过环境变量 CHATGPT2API_AUTH_KEY 覆盖 auth-key
 docker compose up -d
+```
+
+### 非 Docker 部署（Python 原生）
+
+要求：`Python 3.13+`。
+
+```bash
+# 1) 拉取代码
+git clone git@github.com:basketikun/chatgpt2api.git
+cd chatgpt2api
+
+# 2) 安装 uv（如已安装可跳过）
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 3) 安装依赖
+uv sync --frozen --no-dev
+```
+
+启动服务：
+
+```bash
+# 按需编辑 config.json 的 auth-key 和 refresh_account_interval_minute
+uv run uvicorn main:app --host 0.0.0.0 --port 9300 --access-log
+```
+
+启动后可通过 `http://127.0.0.1:8000` 访问 API。
+
+如果你希望启用内置 Web 管理界面（而不仅是 API），需要先构建前端静态资源并放到 `web_dist`：
+
+```bash
+cd web
+npm install
+npm run build
+cd ..
+rm -rf web_dist
+cp -R web/out web_dist
+```
+
+#### Linux 可选：systemd 守护进程
+
+创建 `/etc/systemd/system/chatgpt2api.service`：
+
+```ini
+[Unit]
+Description=chatgpt2api
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/chatgpt2api
+ExecStart=/usr/local/bin/uv run uvicorn main:app --host 0.0.0.0 --port 8000 --access-log
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+```
+
+启用并启动：
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now chatgpt2api
+sudo systemctl status chatgpt2api
 ```
 
 ### 存储后端配置
