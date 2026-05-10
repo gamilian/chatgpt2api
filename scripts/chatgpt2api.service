@@ -1,0 +1,20 @@
+[Unit]
+Description=chatgpt2api
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/root/tools/chatgpt2api
+Environment=PYTHONUNBUFFERED=1
+Environment=PATH=/root/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/usr/bin/env uv run uvicorn main:app --host 0.0.0.0 --port 9030 --access-log
+Restart=always
+RestartSec=3
+TimeoutStopSec=20
+
+[Install]
+WantedBy=multi-user.target
