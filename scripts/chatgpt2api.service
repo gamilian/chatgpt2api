@@ -11,6 +11,7 @@ Group=root
 WorkingDirectory=/root/tools/chatgpt2api
 Environment=PYTHONUNBUFFERED=1
 Environment=PATH=/root/.local/bin:/usr/local/bin:/usr/bin:/bin
+Environment=STORAGE_BACKEND=json
 ExecStart=/usr/bin/env uv run uvicorn main:app --host 0.0.0.0 --port 9030 --access-log
 Restart=always
 RestartSec=3

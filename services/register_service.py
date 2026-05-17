@@ -122,6 +122,26 @@ class RegisterService:
             "current_available": len(normal),
         }
 
+    def _refresh_pool_accounts(self) -> dict:
+        tokens = account_service.list_tokens()
+        if not tokens:
+            metrics = self._pool_metrics()
+            self._bump(**metrics)
+            self._append_log(
+                f"检查号池：当前没有可刷新的账号，当前正常账号={metrics['current_available']}，当前剩余额度={metrics['current_quota']}",
+                "yellow",
+            )
+            return {"refreshed": 0, "errors": [], "items": account_service.list_accounts()}
+
+        result = account_service.refresh_accounts(tokens)
+        metrics = self._pool_metrics()
+        self._bump(**metrics)
+        self._append_log(
+            f"检查号池：已刷新全部账号，成功{result['refreshed']}，失败{len(result['errors'])}，当前正常账号={metrics['current_available']}，当前剩余额度={metrics['current_quota']}",
+            "yellow",
+        )
+        return result
+
     def _target_reached(self, cfg: dict, submitted: int) -> bool:
         mode = str(cfg.get("mode") or "total")
         metrics = self._pool_metrics()
@@ -166,10 +186,20 @@ class RegisterService:
                     submitted += 1
                     futures.add(executor.submit(openai_register.worker, submitted))
                 self._bump(running=len(futures), done=done, success=success, fail=fail)
-                if not futures and (not self.get()["enabled"] or str(cfg.get("mode") or "total") == "total"):
+                if not futures and not self.get()["enabled"]:
                     break
                 if not futures:
-                    time.sleep(max(1, int(cfg.get("check_interval") or 5)))
+                    mode = str(cfg.get("mode") or "total")
+                    if mode in {"quota", "available"} and self.get()["enabled"]:
+                        self._refresh_pool_accounts()
+                        if self._target_reached(self.get(), submitted):
+                            time.sleep(max(1, int(cfg.get("check_interval") or 5)))
+                            continue
+                        continue
+                    if mode == "total" and self.get()["enabled"]:
+                        if submitted >= int(cfg.get("total") or 1):
+                            break
+                        continue
                     continue
                 finished, futures = wait(futures, return_when=FIRST_COMPLETED)
                 for future in finished:

@@ -1,5 +1,5 @@
 {
-  "auth-key": "chatgpt2api",
+  "auth-key": "csl980826",
   "refresh_account_interval_minute": 60,
   "image_retention_days": 15,
   "image_poll_timeout_secs": 120,
@@ -11,7 +11,7 @@
     "info",
     "warning"
   ],
-  "proxy": "",
+  "proxy": "http://127.0.0.1:7890",
   "base_url": "",
   "sensitive_words": [],
   "global_system_prompt": "",

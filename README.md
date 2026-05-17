@@ -46,13 +46,18 @@ docker compose up -d
 git clone git@github.com:basketikun/chatgpt2api.git
 cd chatgpt2api
 uv sync
-uv run main.py
+CHATGPT2API_HOST=0.0.0.0 CHATGPT2API_PORT=9030 uv run main.py
 ```
+
+本地部署到 9030 端口后：
+
+- Web 面板：`http://localhost:9030`
+- API 地址：`http://localhost:9030/v1`
 
 启动前端：
 
 ```bash
-cd chatgpt2api/web
+cd web
 bun install
 bun run dev
 ```
